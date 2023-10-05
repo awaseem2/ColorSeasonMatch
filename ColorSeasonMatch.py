@@ -11,15 +11,18 @@ from tkinter import filedialog
 
 win = Tk()
 win.geometry("800x600+400+200")
-bg_color = "#708f93"
+bg_color = "#31345e"
 win.configure(bg=bg_color)
 seasons_path = "ColorSeasonsHSV.csv"
 curr_image = ""
+max_image_dim = 500
 
 @dataclass
 class ImageInfo:
     name: str
     image: cv2.typing.MatLike
+    width: int
+    height: int
 
 
 color_list = {}
@@ -29,29 +32,26 @@ class Control():
         self.screen = Label(win)
         self.mouse_pos = Label(win,bg=bg_color,fg="white")
         self.mouse_pos.place(x=600, y=280)
-        self.color_label = Label(win)
+        self.color_label = Label(win, bg=bg_color)
         self.color_label.place(x=600, y=50,width=150,height=200)
-        # self.input = Entry(win)
-        # self.input.place(x=600, y=350 , width=150)
         self.input = Label(win, bg=bg_color, fg="white", text="Click on image for hex")
         self.input.place(x=600, y=300)
-        # self.input2 = Entry(win)
-        # self.input2.place(x=600, y=350, width=150, height=70)
-        # self.color_label = Label(win,bg=bg_color,fg="white")
-        # self.color_label.place(x=600, y=350)
         self.btn = Button(win,text="Select Image",command=self.change_image)
         self.btn.place(x=600, y=450)
         self.choose_file()
         self.display()
         self.populate_color_list()
 
-    def to_pil(self):
+    def display_image(self):
         image = Image.fromarray(curr_image.image)
         print(f"New file: {curr_image.name}")
         pic = ImageTk.PhotoImage(image)
         self.screen.configure(image=pic)
         self.screen.image = pic
-        self.screen.place(x=20, y=50)
+        image_x = (max_image_dim - curr_image.width) // 2 + 20
+        image_y = (max_image_dim - curr_image.height) // 2 + 50
+        self.screen.place(x=image_x, y=image_y)
+        
 
     def move_mouse(self, event):
         x = event.x
@@ -64,8 +64,12 @@ class Control():
         curr_image_path = filedialog.askopenfilename()
         cv2_image = cv2.imread(f"{curr_image_path}")
         rgb_image = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2RGB)
-        rgb_image = cv2.resize(rgb_image, (500, 500))
-        curr_image = ImageInfo(curr_image_path, rgb_image)
+        height, width = cv2_image.shape[:2]
+        aspect_ratio = width / height
+        new_width = int(min(max_image_dim, max_image_dim * aspect_ratio))
+        new_height = int(min(max_image_dim, max_image_dim / aspect_ratio))
+        rgb_image = cv2.resize(rgb_image, (new_width, new_height))
+        curr_image = ImageInfo(curr_image_path, rgb_image, new_width, new_height)
 
     def rgb2hex(self, rgb):
         return '#%02x%02x%02x' % rgb
@@ -78,10 +82,7 @@ class Control():
             for color in colors:
                 labColor = color_conversions.convert_color(color, LabColor)
                 delta_e = delta_e_cmc(target_color, labColor)
-                # print(f"Difference for {name} {color}: {delta_e}")
-                # print(f"checking thDereshold: {abs(min_delta - delta_e)}")
                 if abs(min_delta - delta_e) <= threshold:
-                    # print("here")
                     closest_colors.append(name)
                     if delta_e < min_delta:
                       min_delta = delta_e
@@ -91,8 +92,6 @@ class Control():
         return closest_colors
 
     def analyze_color(self, x, y):
-        # hints = StringVar()
-        # hints2 = StringVar()
         img = curr_image.image
         color = img[y, x, :]
         r, g, b = color
@@ -102,22 +101,29 @@ class Control():
         print(f"Closest Season(s): {closest_color}")
 
         rgb = self.rgb2hex((r, g, b))
-        # hints.set(rgb)
-        # self.input['textvariable'] = hints
         self.input.configure(text=rgb)
-        # hints2.set(f"{b},{g},{r}")
-        # self.input2['textvariable'] = hints2
         self.color_label['bg'] = rgb
+        self.color_label['fg'] = self.choose_text_color(r, g, b)
         self.color_label.configure(text='\n'.join(closest_color), wraplength=100)
-        
-        # print(r, g, b, 'hex= ', rgb)
 
+    def calculate_luminance(self, r, g, b):
+        luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+        return luminance
+
+    def choose_text_color(self, r, g, b):
+        background_luminance = self.calculate_luminance(r, g, b)
+
+        if background_luminance < 0.5:
+            return "white"
+        else:
+            return "black"
+        
     def change_image(self):
         self.choose_file()
         self.display()
 
     def display(self):
-        self.to_pil()
+        self.display_image()
         self.screen.bind('<Motion>', self.move_mouse)
     
     def populate_color_list(self):
