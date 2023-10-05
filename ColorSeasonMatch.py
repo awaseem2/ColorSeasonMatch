@@ -7,13 +7,14 @@ from colormath.color_objects import HSVColor, sRGBColor, LabColor
 from colormath.color_diff import delta_e_cmc
 from dataclasses import dataclass
 import csv
+from tkinter import filedialog
 
 win = Tk()
 win.geometry("800x600+400+200")
 bg_color = "#708f93"
 win.configure(bg=bg_color)
-images_path = "/Users/Alvina/Documents/SeasonPics"
 seasons_path = "ColorSeasonsHSV.csv"
+curr_image = ""
 
 @dataclass
 class ImageInfo:
@@ -21,40 +22,30 @@ class ImageInfo:
     image: cv2.typing.MatLike
 
 
-images = os.listdir(images_path)
-all_images = []
-
 color_list = {}
-
-for image_name in images:
-    if image_name == ".DS_Store":
-      continue
-    # TODO: add check for file type == image
-    img_path = cv2.imread(f"{images_path}/{image_name}")
-    rgb_image = cv2.cvtColor(img_path, cv2.COLOR_BGR2RGB)
-    rgb_image = cv2.resize(rgb_image, (500, 500))
-    all_images.append(ImageInfo(image_name, rgb_image))
 
 class Control():
     def __init__(self):
         self.screen = Label(win)
         self.mouse_pos = Label(win,bg=bg_color,fg="white")
-        self.mouse_pos.place(x=600, y=180)
+        self.mouse_pos.place(x=600, y=280)
         self.color_label = Label(win)
-        self.color_label.place(x=600, y=50,width=150,height=100)
+        self.color_label.place(x=600, y=50,width=150,height=200)
         self.input = Entry(win)
-        self.input.place(x=600, y=250 , width=150)
-        self.input2 = Entry(win)
-        self.input2.place(x=600, y=350, width=150)
-        self.btn = Button(win,text="Change image",command=self.change_img_color)
+        self.input.place(x=600, y=350 , width=150)
+        # self.input2 = Entry(win)
+        # self.input2.place(x=600, y=350, width=150, height=70)
+        # self.color_label = Label(win,bg=bg_color,fg="white")
+        # self.color_label.place(x=600, y=350)
+        self.btn = Button(win,text="Select Image",command=self.change_image)
         self.btn.place(x=600, y=450)
-        self.counter = 0
+        self.choose_file()
         self.display()
         self.populate_color_list()
 
-    def to_pil(self, img_info):
-        image = Image.fromarray(img_info.image)
-        print(f"New file: {img_info.name}")
+    def to_pil(self):
+        image = Image.fromarray(curr_image.image)
+        print(f"New file: {curr_image.name}")
         pic = ImageTk.PhotoImage(image)
         self.screen.configure(image=pic)
         self.screen.image = pic
@@ -64,13 +55,20 @@ class Control():
         x = event.x
         y = event.y
         self.mouse_pos.configure(text=f"x= {x}  y= {y}")
-        img = all_images[self.counter]
-        self.screen.bind('<Button-1>', lambda e: self.capture_color(img, x, y))
+        self.screen.bind('<Button-1>', lambda e: self.analyze_color(x, y))
+    
+    def choose_file(self):
+        global curr_image
+        curr_image_path = filedialog.askopenfilename()
+        cv2_image = cv2.imread(f"{curr_image_path}")
+        rgb_image = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2RGB)
+        rgb_image = cv2.resize(rgb_image, (500, 500))
+        curr_image = ImageInfo(curr_image_path, rgb_image)
 
     def rgb2hex(self, rgb):
         return '#%02x%02x%02x' % rgb
 
-    def find_closest_color(self, target_color):
+    def find_closest_seasons(self, target_color):
         min_delta = 1000000
         closest_colors = []
         threshold = 25
@@ -90,36 +88,33 @@ class Control():
                     closest_colors = [name]
         return closest_colors
 
-    def capture_color(self, img_info, x, y):
+    def analyze_color(self, x, y):
         hints = StringVar()
-        hints2 = StringVar()
-        img = img_info.image
+        # hints2 = StringVar()
+        img = curr_image.image
         color = img[y, x, :]
         r, g, b = color
         rgbColor = sRGBColor(r, g, b)
         labColor = color_conversions.convert_color(rgbColor, LabColor)
-        hsvColor = color_conversions.convert_color(rgbColor, HSVColor)
-        print(f"HSVColor{hsvColor.get_value_tuple()},")
-        closest_color = self.find_closest_color(labColor)
+        closest_color = self.find_closest_seasons(labColor)
         print(f"Closest Season(s): {closest_color}")
 
         rgb = self.rgb2hex((r, g, b))
         hints.set(rgb)
         self.input['textvariable'] = hints
-        hints2.set(f"{b},{g},{r}")#for opencv and rgb for the rest of use
-        self.input2['textvariable'] = hints2
+        # hints2.set(f"{b},{g},{r}")
+        # self.input2['textvariable'] = hints2
         self.color_label['bg'] = rgb
+        self.color_label.configure(text='\n'.join(closest_color), wraplength=100)
+        
         # print(r, g, b, 'hex= ', rgb)
 
-    def change_img_color(self):
-        self.counter +=1
-        if self.counter >= len(all_images):
-            self.counter = 0
+    def change_image(self):
+        self.choose_file()
         self.display()
 
     def display(self):
-        print(self.counter)
-        self.to_pil(all_images[self.counter])
+        self.to_pil()
         self.screen.bind('<Motion>', self.move_mouse)
     
     def populate_color_list(self):
