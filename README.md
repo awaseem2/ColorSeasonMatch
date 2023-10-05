@@ -1,6 +1,9 @@
 # ColorSeasonMatch
 
-![](DemoVideo.mp4)
+
+https://github.com/awaseem2/ColorSeasonMatch/assets/32113580/d0b29002-9792-4a28-afff-99a4723dabc2
+
+
 
 ## Context
 There are 12 different color seasons, and the theory is that only 1 looks best on each person. You can read more about color seasons [here](https://www.fineclothing.com/the-fine-line/color-analysis.html), but I also liked [this video](https://www.youtube.com/watch?v=X-VyDqCznnw&pp=ygUZY29sb3Igc2Vhc29uIHN0eWxlIHRoZW9yeQ%3D%3D) as an explanation as well.
