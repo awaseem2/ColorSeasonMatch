@@ -31,8 +31,10 @@ class Control():
         self.mouse_pos.place(x=600, y=280)
         self.color_label = Label(win)
         self.color_label.place(x=600, y=50,width=150,height=200)
-        self.input = Entry(win)
-        self.input.place(x=600, y=350 , width=150)
+        # self.input = Entry(win)
+        # self.input.place(x=600, y=350 , width=150)
+        self.input = Label(win, bg=bg_color, fg="white", text="Click on image for hex")
+        self.input.place(x=600, y=300)
         # self.input2 = Entry(win)
         # self.input2.place(x=600, y=350, width=150, height=70)
         # self.color_label = Label(win,bg=bg_color,fg="white")
@@ -89,7 +91,7 @@ class Control():
         return closest_colors
 
     def analyze_color(self, x, y):
-        hints = StringVar()
+        # hints = StringVar()
         # hints2 = StringVar()
         img = curr_image.image
         color = img[y, x, :]
@@ -100,8 +102,9 @@ class Control():
         print(f"Closest Season(s): {closest_color}")
 
         rgb = self.rgb2hex((r, g, b))
-        hints.set(rgb)
-        self.input['textvariable'] = hints
+        # hints.set(rgb)
+        # self.input['textvariable'] = hints
+        self.input.configure(text=rgb)
         # hints2.set(f"{b},{g},{r}")
         # self.input2['textvariable'] = hints2
         self.color_label['bg'] = rgb
