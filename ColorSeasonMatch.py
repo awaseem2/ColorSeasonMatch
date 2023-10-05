@@ -16,6 +16,11 @@ win.configure(bg=bg_color)
 seasons_path = "ColorSeasonsHSV.csv"
 curr_image = ""
 max_image_dim = 500
+right_panel_x = 550
+right_panel_y_padding = 100
+left_panel_x = 20
+left_panel_y = 50
+button_scale = 10
 
 @dataclass
 class ImageInfo:
@@ -30,14 +35,14 @@ color_list = {}
 class Control():
     def __init__(self):
         self.screen = Label(win)
+        self.btn = Button(win,text="Select New Image",command=self.change_image)
+        self.btn.place(x=max_image_dim+150, y=max_image_dim+30)
+        self.season_label = Label(win, bg=bg_color)
+        self.season_label.place(x=right_panel_x, y=right_panel_y_padding,width=150,height=200)
         self.mouse_pos = Label(win,bg=bg_color,fg="white")
-        self.mouse_pos.place(x=600, y=280)
-        self.color_label = Label(win, bg=bg_color)
-        self.color_label.place(x=600, y=50,width=150,height=200)
-        self.input = Label(win, bg=bg_color, fg="white", text="Click on image for hex")
-        self.input.place(x=600, y=300)
-        self.btn = Button(win,text="Select Image",command=self.change_image)
-        self.btn.place(x=600, y=450)
+        self.mouse_pos.place(x=right_panel_x, y=right_panel_y_padding+220)
+        self.hex_label = Label(win, bg=bg_color, fg="white", text="Click on image for hex")
+        self.hex_label.place(x=right_panel_x, y=right_panel_y_padding+240)
         self.choose_file()
         self.display()
         self.populate_color_list()
@@ -48,8 +53,8 @@ class Control():
         pic = ImageTk.PhotoImage(image)
         self.screen.configure(image=pic)
         self.screen.image = pic
-        image_x = (max_image_dim - curr_image.width) // 2 + 20
-        image_y = (max_image_dim - curr_image.height) // 2 + 50
+        image_x = (max_image_dim - curr_image.width) // 2 + left_panel_x
+        image_y = (max_image_dim - curr_image.height) // 2 + left_panel_y
         self.screen.place(x=image_x, y=image_y)
         
 
@@ -101,10 +106,10 @@ class Control():
         print(f"Closest Season(s): {closest_color}")
 
         rgb = self.rgb2hex((r, g, b))
-        self.input.configure(text=rgb)
-        self.color_label['bg'] = rgb
-        self.color_label['fg'] = self.choose_text_color(r, g, b)
-        self.color_label.configure(text='\n'.join(closest_color), wraplength=100)
+        self.hex_label.configure(text=rgb)
+        self.season_label['bg'] = rgb
+        self.season_label['fg'] = self.choose_text_color(r, g, b)
+        self.season_label.configure(text='\n'.join(closest_color), wraplength=100)
 
     def calculate_luminance(self, r, g, b):
         luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
