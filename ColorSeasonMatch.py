@@ -82,13 +82,14 @@ class Control():
     def find_closest_seasons(self, target_color):
         min_delta = 1000000
         closest_colors = []
-        threshold = 50
+        threshold = 25
         for name, colors in color_list.items():
             for color in colors:
                 labColor = color_conversions.convert_color(color, LabColor)
                 delta_e = delta_e_cmc(target_color, labColor)
-                if abs(min_delta - delta_e) <= threshold and name not in closest_colors:
-                    closest_colors.append(name)
+                if abs(min_delta - delta_e) <= threshold:
+                    if name not in closest_colors:
+                        closest_colors.append(name)
                     if delta_e < min_delta:
                       min_delta = delta_e
                 elif delta_e < min_delta:
